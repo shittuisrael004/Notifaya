@@ -6,10 +6,9 @@
 // ============================================================================
 
 import express from "express";
-import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 import dotenv from "dotenv";
 import fs from "fs/promises";
-import path from "path";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -29,24 +28,16 @@ const REGISTRATIONS_FILE = "registrations.json";
 // ============================================================================
 // EMAIL CONFIGURATION
 // ============================================================================
-// Configure Nodemailer to send emails via SendGrid (works on Railway)
+// Configure SendGrid Web API (works on Railway - no SMTP needed)
 // Requires SENDGRID_API_KEY in .env file
-const transporter = nodemailer.createTransport({
-  host: "smtp.sendgrid.net",
-  port: 587,
-  secure: false,
-  auth: {
-    user: "apikey", // This is literally the string "apikey"
-    pass: process.env.SENDGRID_API_KEY // Your SendGrid API key
-  } 
-});
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// Verify email configuration works on server startup
-// This catches configuration errors early before any emails are sent
-transporter.verify((error) => {
-  if (error) console.error("❌ Email config error:", error);
-  else console.log("✅ Email server ready");
-});
+// Verify API key on startup
+if (process.env.SENDGRID_API_KEY) {
+  console.log("✅ SendGrid API key configured");
+} else {
+  console.error("❌ SENDGRID_API_KEY not found in environment variables");
+}
 
 // ============================================================================
 // HELPER FUNCTIONS FOR MANAGING REGISTRATIONS
@@ -210,12 +201,14 @@ app.post("/webhook/stx-received", async (req, res) => {
               
               // ---- SEND EMAIL NOTIFICATION ----
               try {
-                await transporter.sendMail({
-                  from: process.env.EMAIL_USER || "notifications@notifaya.app",
+                const msg = {
                   to: email,
+                  from: process.env.EMAIL_USER, // Must be your verified sender in SendGrid
                   subject: "💰 You received STX!",
                   text: `You just received ${amountSTX} STX from ${sender}\n\nTo address: ${recipient}\nTransaction: ${tx.transaction_identifier.hash}`
-                });
+                };
+                
+                await sgMail.send(msg);
                 
                 console.log(`✅ Email sent to ${email}`);
               } catch (error) {
