@@ -22,7 +22,7 @@ Vibecoded!
 
 1. **Clone the repository**
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/shittuisrael004/Notifaya
    cd notifaya
    ```
 
@@ -40,11 +40,6 @@ Vibecoded!
 
    > **Note**: For Gmail, you need to use an [App Password](https://support.google.com/accounts/answer/185833), not your regular password.
 
-4. **Create the public directory**
-   ```bash
-   mkdir public
-   ```
-   Then save the provided HTML file as `public/index.html`
 
 ## 🔧 Setting Up Chainhook
 
