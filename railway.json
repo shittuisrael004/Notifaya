@@ -8,10 +8,3 @@
     "restartPolicyMaxRetries": 10
   }
 }
-```
-
-**Update your `.gitignore`**:
-```
-node_modules/
-.env
-registrations.json
