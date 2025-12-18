@@ -5,12 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Notifaya - STX Payment Notifications</title>
   <style>
+    /* ================================================================
+       GLOBAL STYLES
+       ================================================================ */
+    
+    /* Reset default margins and padding, use border-box sizing */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
 
+    /* Main body styles with gradient background */
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -21,6 +27,9 @@
       padding: 20px;
     }
 
+    /* ================================================================
+       CONTAINER - Main card that holds the form
+       ================================================================ */
     .container {
       background: white;
       border-radius: 16px;
@@ -30,22 +39,32 @@
       padding: 40px;
     }
 
+    /* ================================================================
+       HEADER SECTION
+       ================================================================ */
     h1 {
       color: #333;
       margin-bottom: 10px;
       font-size: 28px;
     }
 
+    /* Subtitle text below the main heading */
     .subtitle {
       color: #666;
       margin-bottom: 30px;
       font-size: 14px;
     }
 
+    /* ================================================================
+       FORM ELEMENTS
+       ================================================================ */
+    
+    /* Spacing between form fields */
     .form-group {
       margin-bottom: 20px;
     }
 
+    /* Label styling for input fields */
     label {
       display: block;
       color: #333;
@@ -54,20 +73,25 @@
       font-size: 14px;
     }
 
+    /* Input field styling */
     input {
       width: 100%;
       padding: 12px 16px;
       border: 2px solid #e0e0e0;
       border-radius: 8px;
       font-size: 15px;
-      transition: border-color 0.3s;
+      transition: border-color 0.3s; /* Smooth transition on focus */
     }
 
+    /* Input field focus state - highlight with blue border */
     input:focus {
       outline: none;
       border-color: #667eea;
     }
 
+    /* ================================================================
+       SUBMIT BUTTON
+       ================================================================ */
     button {
       width: 100%;
       padding: 14px;
@@ -81,29 +105,38 @@
       transition: transform 0.2s, box-shadow 0.2s;
     }
 
+    /* Button hover effect - lift up slightly */
     button:hover {
       transform: translateY(-2px);
       box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
     }
 
+    /* Button click effect - return to original position */
     button:active {
       transform: translateY(0);
     }
 
+    /* Disabled button state - lower opacity and prevent interaction */
     button:disabled {
       opacity: 0.6;
       cursor: not-allowed;
       transform: none;
     }
 
+    /* ================================================================
+       MESSAGE DISPLAY (Success/Error notifications)
+       ================================================================ */
+    
+    /* Base message styling - hidden by default */
     .message {
       margin-top: 20px;
       padding: 12px 16px;
       border-radius: 8px;
       font-size: 14px;
-      display: none;
+      display: none; /* Hidden until JavaScript shows it */
     }
 
+    /* Success message - green background */
     .message.success {
       background: #d4edda;
       color: #155724;
@@ -111,6 +144,7 @@
       display: block;
     }
 
+    /* Error message - red background */
     .message.error {
       background: #f8d7da;
       color: #721c24;
@@ -118,10 +152,13 @@
       display: block;
     }
 
+    /* ================================================================
+       FEATURE LIST - "What you'll get" section
+       ================================================================ */
     .feature-list {
       margin-top: 30px;
       padding-top: 30px;
-      border-top: 1px solid #e0e0e0;
+      border-top: 1px solid #e0e0e0; /* Visual separator */
     }
 
     .feature-list h3 {
@@ -130,19 +167,22 @@
       margin-bottom: 15px;
     }
 
+    /* Remove default list styling */
     .feature-list ul {
       list-style: none;
       padding: 0;
     }
 
+    /* Individual feature items */
     .feature-list li {
       color: #666;
       font-size: 14px;
       padding: 8px 0;
-      padding-left: 25px;
+      padding-left: 25px; /* Space for checkmark */
       position: relative;
     }
 
+    /* Custom checkmark before each feature */
     .feature-list li:before {
       content: "✓";
       position: absolute;
@@ -153,11 +193,15 @@
   </style>
 </head>
 <body>
+  <!-- Main container for the entire registration interface -->
   <div class="container">
+    <!-- Header section with title and description -->
     <h1>💰 Notifaya</h1>
     <p class="subtitle">Get instant email notifications when you receive STX</p>
 
+    <!-- Registration form -->
     <form id="registrationForm">
+      <!-- Stacks Address input field -->
       <div class="form-group">
         <label for="address">Stacks Address</label>
         <input 
@@ -169,6 +213,7 @@
         >
       </div>
 
+      <!-- Email Address input field -->
       <div class="form-group">
         <label for="email">Email Address</label>
         <input 
@@ -180,11 +225,14 @@
         >
       </div>
 
+      <!-- Submit button -->
       <button type="submit" id="submitBtn">Start Monitoring</button>
     </form>
 
+    <!-- Message container for success/error notifications (hidden by default) -->
     <div id="message" class="message"></div>
 
+    <!-- Feature list showing benefits to users -->
     <div class="feature-list">
       <h3>What you'll get:</h3>
       <ul>
@@ -195,23 +243,37 @@
     </div>
   </div>
 
+  <!-- ================================================================
+       JAVASCRIPT - Form submission and API interaction
+       ================================================================ -->
   <script>
+    // Get references to DOM elements we'll interact with
     const form = document.getElementById('registrationForm');
     const messageDiv = document.getElementById('message');
     const submitBtn = document.getElementById('submitBtn');
 
+    /**
+     * Handle form submission
+     * Prevents default form behavior and sends data to our API
+     */
     form.addEventListener('submit', async (e) => {
+      // Prevent the form from doing a traditional page refresh
       e.preventDefault();
       
+      // Get trimmed values from form inputs
       const address = document.getElementById('address').value.trim();
       const email = document.getElementById('email').value.trim();
 
-      // Disable button and show loading
+      // ---- UPDATE UI TO SHOW LOADING STATE ----
+      // Disable button to prevent double submission
       submitBtn.disabled = true;
+      // Change button text to show processing
       submitBtn.textContent = 'Registering...';
+      // Hide any previous messages
       messageDiv.style.display = 'none';
 
       try {
+        // ---- SEND REGISTRATION REQUEST TO API ----
         const response = await fetch('/api/register', {
           method: 'POST',
           headers: {
@@ -220,23 +282,32 @@
           body: JSON.stringify({ address, email })
         });
 
+        // Parse JSON response from server
         const data = await response.json();
 
+        // ---- HANDLE API RESPONSE ----
         if (response.ok) {
+          // Success! Show success message
           messageDiv.className = 'message success';
           messageDiv.textContent = data.message;
           messageDiv.style.display = 'block';
+          // Clear the form fields
           form.reset();
         } else {
+          // Error response from server (400, 500, etc.)
           messageDiv.className = 'message error';
           messageDiv.textContent = data.error || 'Registration failed';
           messageDiv.style.display = 'block';
         }
       } catch (error) {
+        // ---- HANDLE NETWORK ERRORS ----
+        // This catches fetch failures (network down, server unreachable, etc.)
         messageDiv.className = 'message error';
         messageDiv.textContent = 'Network error. Please try again.';
         messageDiv.style.display = 'block';
       } finally {
+        // ---- RESTORE BUTTON STATE ----
+        // Always restore button to clickable state, whether success or error
         submitBtn.disabled = false;
         submitBtn.textContent = 'Start Monitoring';
       }
