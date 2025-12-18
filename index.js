@@ -29,16 +29,16 @@ const REGISTRATIONS_FILE = "registrations.json";
 // ============================================================================
 // EMAIL CONFIGURATION
 // ============================================================================
-// Configure Nodemailer to send emails via Gmail SMTP
-// Requires EMAIL_USER and EMAIL_PASS in .env file
+// Configure Nodemailer to send emails via SendGrid (works on Railway)
+// Requires SENDGRID_API_KEY in .env file
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
+  host: "smtp.sendgrid.net",
   port: 587,
-  secure: false, // Use STARTTLS
+  secure: false,
   auth: {
-    user: process.env.EMAIL_USER, // Your Gmail address
-    pass: process.env.EMAIL_PASS  // Your Gmail app password
-  }
+    user: "apikey", // This is literally the string "apikey"
+    pass: process.env.SENDGRID_API_KEY // Your SendGrid API key
+  } 
 });
 
 // Verify email configuration works on server startup
@@ -211,7 +211,7 @@ app.post("/webhook/stx-received", async (req, res) => {
               // ---- SEND EMAIL NOTIFICATION ----
               try {
                 await transporter.sendMail({
-                  from: `"Notifaya" <${process.env.EMAIL_USER}>`,
+                  from: process.env.EMAIL_USER || "notifications@notifaya.app",
                   to: email,
                   subject: "💰 You received STX!",
                   text: `You just received ${amountSTX} STX from ${sender}\n\nTo address: ${recipient}\nTransaction: ${tx.transaction_identifier.hash}`
