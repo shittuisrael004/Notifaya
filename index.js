@@ -34,9 +34,11 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // Verify API key on startup
 if (process.env.SENDGRID_API_KEY) {
-  console.log("✅ SendGrid API key configured");
+  console.log("SendGrid API key configured");
+  console.log("API Key starts with SG.:", process.env.SENDGRID_API_KEY.startsWith('SG.'));
+  console.log("API Key length:", process.env.SENDGRID_API_KEY.length);
 } else {
-  console.error("❌ SENDGRID_API_KEY not found in environment variables");
+  console.error("SENDGRID_API_KEY not found in environment variables");
 }
 
 // ============================================================================
@@ -201,18 +203,22 @@ app.post("/webhook/stx-received", async (req, res) => {
               
               // ---- SEND EMAIL NOTIFICATION ----
               try {
+                console.log("Debug - API Key exists:", !!process.env.SENDGRID_API_KEY);
+                console.log("Debug - API Key starts with SG:", process.env.SENDGRID_API_KEY?.startsWith('SG.'));
+                console.log("Debug - From email:", process.env.EMAIL_USER);
+                
                 const msg = {
                   to: email,
                   from: process.env.EMAIL_USER, // Must be your verified sender in SendGrid
-                  subject: "💰 You received STX!",
+                  subject: "You received STX!",
                   text: `You just received ${amountSTX} STX from ${sender}\n\nTo address: ${recipient}\nTransaction: ${tx.transaction_identifier.hash}`
                 };
                 
                 await sgMail.send(msg);
                 
-                console.log(`✅ Email sent to ${email}`);
+                console.log("Email sent to:", email);
               } catch (error) {
-                console.error("❌ Failed to send email:", error);
+                console.error("Failed to send email:", error.response?.body || error.message);
                 // Don't throw - continue processing other transactions
               }
             }
