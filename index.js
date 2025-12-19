@@ -35,8 +35,6 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 // Verify API key on startup
 if (process.env.SENDGRID_API_KEY) {
   console.log("SendGrid API key configured");
-  console.log("API Key starts with SG.:", process.env.SENDGRID_API_KEY.startsWith('SG.'));
-  console.log("API Key length:", process.env.SENDGRID_API_KEY.length);
 } else {
   console.error("SENDGRID_API_KEY not found in environment variables");
 }
@@ -124,11 +122,11 @@ app.post("/api/register", async (req, res) => {
 
     // Save updated registrations to file
     await saveRegistrations(registrations);
-    console.log(`✅ New registration: ${address} -> ${email}`);
+    console.log(`New registration: ${address} -> ${email}`);
 
     res.json({ message: "Registration successful! You'll be notified of incoming STX transfers." });
   } catch (error) {
-    console.error("❌ Registration error:", error);
+    console.error("Registration error:", error);
     res.status(500).json({ error: "Failed to register" });
   }
 });
@@ -143,13 +141,13 @@ app.post("/api/register", async (req, res) => {
 app.post("/webhook/stx-received", async (req, res) => {
   const payload = req.body;
   
-  console.log("📨 Webhook received");
+  console.log("Webhook received");
 
   // ---- CHECK FOR ROLLBACKS ----
   // Blockchain reorganizations can cause blocks to be rolled back
   // We ignore these to avoid sending duplicate/incorrect notifications
   if (payload.rollback && payload.rollback.length > 0) {
-    console.log("⏪ Ignoring rollback event");
+    console.log("Ignoring rollback event");
     return res.sendStatus(200);
   }
 
@@ -164,7 +162,7 @@ app.post("/webhook/stx-received", async (req, res) => {
     const registrations = await loadRegistrations();
     
     if (registrations.length === 0) {
-      console.log("ℹ️ No registered addresses yet");
+      console.log("No registered addresses yet");
       return res.sendStatus(200);
     }
 
@@ -199,19 +197,35 @@ app.post("/webhook/stx-received", async (req, res) => {
               // Convert from microSTX (1 STX = 1,000,000 microSTX)
               const amountSTX = Number(amount) / 1_000_000;
               
-              console.log(`💰 STX received: ${amountSTX} STX from ${sender} to ${recipient}`);
+              console.log(`STX received: ${amountSTX} STX from ${sender} to ${recipient}`);
               
               // ---- SEND EMAIL NOTIFICATION ----
               try {
-                console.log("Debug - API Key exists:", !!process.env.SENDGRID_API_KEY);
-                console.log("Debug - API Key starts with SG:", process.env.SENDGRID_API_KEY?.startsWith('SG.'));
-                console.log("Debug - From email:", process.env.EMAIL_USER);
-                
                 const msg = {
                   to: email,
-                  from: process.env.EMAIL_USER, // Must be your verified sender in SendGrid
+                  from: {
+                    email: process.env.EMAIL_USER,
+                    name: 'Notifaya'
+                  },
                   subject: "You received STX!",
-                  text: `You just received ${amountSTX} STX from ${sender}\n\nTo address: ${recipient}\nTransaction: ${tx.transaction_identifier.hash}`
+                  text: `You just received ${amountSTX} STX from ${sender}\n\nTo address: ${recipient}\nTransaction: ${tx.transaction_identifier.hash}`,
+                  html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                      <h2 style="color: #667eea;">You received STX!</h2>
+                      <p style="font-size: 16px;">You just received <strong>${amountSTX} STX</strong></p>
+                      <p style="color: #666;">From: <code>${sender}</code></p>
+                      <p style="color: #666;">To: <code>${recipient}</code></p>
+                      <p style="margin-top: 20px;">
+                        <a href="https://explorer.hiro.so/txid/${tx.transaction_identifier.hash}?chain=testnet" 
+                           style="background: #667eea; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                          View Transaction
+                        </a>
+                      </p>
+                      <p style="color: #999; font-size: 12px; margin-top: 30px;">
+                        Powered by Notifaya
+                      </p>
+                    </div>
+                  `
                 };
                 
                 await sgMail.send(msg);
@@ -227,7 +241,7 @@ app.post("/webhook/stx-received", async (req, res) => {
       }
     }
   } catch (error) {
-    console.error("❌ Webhook processing error:", error);
+    console.error("Webhook processing error:", error);
   }
 
   // Always return 200 OK to acknowledge receipt
@@ -253,5 +267,5 @@ app.get("/api/status", async (req, res) => {
 // START SERVER
 // ============================================================================
 app.listen(3000, () => {
-  console.log("🚀 Notifaya server running on http://localhost:3000");
+  console.log("Notifaya server running");
 });
