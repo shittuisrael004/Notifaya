@@ -214,11 +214,11 @@ app.post("/webhook/stx-received", async (req, res) => {
                       <h2 style="color: #667eea;">You received STX!</h2>
                       <p style="font-size: 18px; margin: 20px 0;">You just received <strong>${amountSTX} STX</strong></p>
                       <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                        <p style="margin: 5px 0; color: #666;">From: <code style="font-size: 12px;">${sender}</code></p>
-                        <p style="margin: 5px 0; color: #666;">To: <code style="font-size: 12px;">${recipient}</code></p>
+                        <p style="margin: 5px 0; color: #666;"><strong>From: </strong><code style="font-size: 12px;">${sender}</code></p>
+                        <p style="margin: 5px 0; color: #666;"><strong>To: </strong><code style="font-size: 12px;">${recipient}</code></p>
                      </div>
                         <a href="https://explorer.hiro.so/txid/${tx.transaction_identifier.hash}?chain=testnet" 
-                           style="background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 10px;">
+                           style="display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 10px;">
                           View Transaction
                         </a>
                       <p style="color: #999; font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px;">
