@@ -4,19 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Notifaya - STX Payment Notifications</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23667eea;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%23764ba2;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='100' cy='100' r='90' fill='url(%23grad)'/%3E%3Cpath d='M 70 90 Q 70 60 100 60 Q 130 60 130 90 L 130 110 Q 130 120 120 125 L 80 125 Q 70 120 70 110 Z' fill='%23fff'/%3E%3Cpath d='M 90 125 Q 90 135 100 135 Q 110 135 110 125' fill='%23fff'/%3E%3Ccircle cx='100' cy='55' r='5' fill='%23fff'/%3E%3Ctext x='100' y='105' font-size='35' font-weight='bold' text-anchor='middle' fill='%23667eea'%3E$%3C/text%3E%3C/svg%3E">
   <style>
-    /* ================================================================
-       GLOBAL STYLES
-       ================================================================ */
-    
-    /* Reset default margins and padding, use border-box sizing */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
 
-    /* Main body styles with gradient background */
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -27,9 +22,6 @@
       padding: 20px;
     }
 
-    /* ================================================================
-       CONTAINER - Main card that holds the form
-       ================================================================ */
     .container {
       background: white;
       border-radius: 16px;
@@ -39,32 +31,38 @@
       padding: 40px;
     }
 
-    /* ================================================================
-       HEADER SECTION
-       ================================================================ */
+    .logo {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo svg {
+      width: 100%;
+      height: 100%;
+    }
+
     h1 {
       color: #333;
       margin-bottom: 10px;
       font-size: 28px;
+      text-align: center;
     }
 
-    /* Subtitle text below the main heading */
     .subtitle {
       color: #666;
       margin-bottom: 30px;
       font-size: 14px;
+      text-align: center;
     }
 
-    /* ================================================================
-       FORM ELEMENTS
-       ================================================================ */
-    
-    /* Spacing between form fields */
     .form-group {
       margin-bottom: 20px;
     }
 
-    /* Label styling for input fields */
     label {
       display: block;
       color: #333;
@@ -73,25 +71,20 @@
       font-size: 14px;
     }
 
-    /* Input field styling */
     input {
       width: 100%;
       padding: 12px 16px;
       border: 2px solid #e0e0e0;
       border-radius: 8px;
       font-size: 15px;
-      transition: border-color 0.3s; /* Smooth transition on focus */
+      transition: border-color 0.3s;
     }
 
-    /* Input field focus state - highlight with blue border */
     input:focus {
       outline: none;
       border-color: #667eea;
     }
 
-    /* ================================================================
-       SUBMIT BUTTON
-       ================================================================ */
     button {
       width: 100%;
       padding: 14px;
@@ -105,38 +98,29 @@
       transition: transform 0.2s, box-shadow 0.2s;
     }
 
-    /* Button hover effect - lift up slightly */
     button:hover {
       transform: translateY(-2px);
       box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
     }
 
-    /* Button click effect - return to original position */
     button:active {
       transform: translateY(0);
     }
 
-    /* Disabled button state - lower opacity and prevent interaction */
     button:disabled {
       opacity: 0.6;
       cursor: not-allowed;
       transform: none;
     }
 
-    /* ================================================================
-       MESSAGE DISPLAY (Success/Error notifications)
-       ================================================================ */
-    
-    /* Base message styling - hidden by default */
     .message {
       margin-top: 20px;
       padding: 12px 16px;
       border-radius: 8px;
       font-size: 14px;
-      display: none; /* Hidden until JavaScript shows it */
+      display: none;
     }
 
-    /* Success message - green background */
     .message.success {
       background: #d4edda;
       color: #155724;
@@ -144,7 +128,6 @@
       display: block;
     }
 
-    /* Error message - red background */
     .message.error {
       background: #f8d7da;
       color: #721c24;
@@ -152,13 +135,10 @@
       display: block;
     }
 
-    /* ================================================================
-       FEATURE LIST - "What you'll get" section
-       ================================================================ */
     .feature-list {
       margin-top: 30px;
       padding-top: 30px;
-      border-top: 1px solid #e0e0e0; /* Visual separator */
+      border-top: 1px solid #e0e0e0;
     }
 
     .feature-list h3 {
@@ -167,22 +147,19 @@
       margin-bottom: 15px;
     }
 
-    /* Remove default list styling */
     .feature-list ul {
       list-style: none;
       padding: 0;
     }
 
-    /* Individual feature items */
     .feature-list li {
       color: #666;
       font-size: 14px;
       padding: 8px 0;
-      padding-left: 25px; /* Space for checkmark */
+      padding-left: 25px;
       position: relative;
     }
 
-    /* Custom checkmark before each feature */
     .feature-list li:before {
       content: "✓";
       position: absolute;
@@ -193,15 +170,27 @@
   </style>
 </head>
 <body>
-  <!-- Main container for the entire registration interface -->
   <div class="container">
-    <!-- Header section with title and description -->
+    <div class="logo">
+      <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+          </linearGradient>
+        </defs>
+        <circle cx="100" cy="100" r="90" fill="url(#grad)"/>
+        <path d="M 70 90 Q 70 60 100 60 Q 130 60 130 90 L 130 110 Q 130 120 120 125 L 80 125 Q 70 120 70 110 Z" fill="#fff"/>
+        <path d="M 90 125 Q 90 135 100 135 Q 110 135 110 125" fill="#fff"/>
+        <circle cx="100" cy="55" r="5" fill="#fff"/>
+        <text x="100" y="105" font-size="35" font-weight="bold" text-anchor="middle" fill="#667eea">$</text>
+      </svg>
+    </div>
+
     <h1>Notifaya</h1>
     <p class="subtitle">Get instant email notifications when you receive STX</p>
 
-    <!-- Registration form -->
     <form id="registrationForm">
-      <!-- Stacks Address input field -->
       <div class="form-group">
         <label for="address">Stacks Address</label>
         <input 
@@ -213,7 +202,6 @@
         >
       </div>
 
-      <!-- Email Address input field -->
       <div class="form-group">
         <label for="email">Email Address</label>
         <input 
@@ -225,89 +213,60 @@
         >
       </div>
 
-      <!-- Submit button -->
       <button type="submit" id="submitBtn">Start Monitoring</button>
     </form>
 
-    <!-- Message container for success/error notifications (hidden by default) -->
     <div id="message" class="message"></div>
 
-    <!-- Feature list showing benefits to users -->
     <div class="feature-list">
       <h3>What you'll get:</h3>
       <ul>
         <li>Instant email alerts for incoming STX</li>
         <li>Transaction details and sender info</li>
-        <li>No signup required - just enter and go</li>
+        <li>No signup required</li>
       </ul>
     </div>
   </div>
 
-  <!-- ================================================================
-       JAVASCRIPT - Form submission and API interaction
-       ================================================================ -->
   <script>
-    // Get references to DOM elements we'll interact with
     const form = document.getElementById('registrationForm');
     const messageDiv = document.getElementById('message');
     const submitBtn = document.getElementById('submitBtn');
 
-    /**
-     * Handle form submission
-     * Prevents default form behavior and sends data to our API
-     */
     form.addEventListener('submit', async (e) => {
-      // Prevent the form from doing a traditional page refresh
       e.preventDefault();
       
-      // Get trimmed values from form inputs
       const address = document.getElementById('address').value.trim();
       const email = document.getElementById('email').value.trim();
 
-      // ---- UPDATE UI TO SHOW LOADING STATE ----
-      // Disable button to prevent double submission
       submitBtn.disabled = true;
-      // Change button text to show processing
       submitBtn.textContent = 'Registering...';
-      // Hide any previous messages
       messageDiv.style.display = 'none';
 
       try {
-        // ---- SEND REGISTRATION REQUEST TO API ----
         const response = await fetch('/api/register', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ address, email })
         });
 
-        // Parse JSON response from server
         const data = await response.json();
 
-        // ---- HANDLE API RESPONSE ----
         if (response.ok) {
-          // Success! Show success message
           messageDiv.className = 'message success';
           messageDiv.textContent = data.message;
           messageDiv.style.display = 'block';
-          // Clear the form fields
           form.reset();
         } else {
-          // Error response from server (400, 500, etc.)
           messageDiv.className = 'message error';
           messageDiv.textContent = data.error || 'Registration failed';
           messageDiv.style.display = 'block';
         }
       } catch (error) {
-        // ---- HANDLE NETWORK ERRORS ----
-        // This catches fetch failures (network down, server unreachable, etc.)
         messageDiv.className = 'message error';
         messageDiv.textContent = 'Network error. Please try again.';
         messageDiv.style.display = 'block';
       } finally {
-        // ---- RESTORE BUTTON STATE ----
-        // Always restore button to clickable state, whether success or error
         submitBtn.disabled = false;
         submitBtn.textContent = 'Start Monitoring';
       }
