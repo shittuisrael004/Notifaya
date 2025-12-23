@@ -5,15 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Notifaya - STX Payment Notifications</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23667eea;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%23764ba2;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='100' cy='100' r='90' fill='url(%23grad)'/%3E%3Cpath d='M 70 90 Q 70 60 100 60 Q 130 60 130 90 L 130 110 Q 130 120 120 125 L 80 125 Q 70 120 70 110 Z' fill='%23fff'/%3E%3Cpath d='M 90 125 Q 90 135 100 135 Q 110 135 110 125' fill='%23fff'/%3E%3Ccircle cx='100' cy='55' r='5' fill='%23fff'/%3E%3Ctext x='100' y='105' font-size='35' font-weight='bold' text-anchor='middle' fill='%23667eea'%3E$%3C/text%3E%3C/svg%3E">
-  <script type="module">
-    // Import from CDN
-    import { request } from 'https://esm.sh/@stacks/connect@7.8.2';
-    
-    // Make request available globally
-    window.stacksRequest = request;
-    window.stacksConnectReady = true;
-    console.log('Stacks Connect loaded via CDN');
-  </script>
   <style>
     * {
       margin: 0;
@@ -122,6 +113,12 @@
       transform: none;
     }
 
+    .donate-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+    }
+
     .donate-btn {
       width: 100%;
       padding: 12px;
@@ -133,7 +130,6 @@
       font-weight: 600;
       cursor: pointer;
       transition: transform 0.2s, box-shadow 0.2s;
-      margin-top: 20px;
     }
 
     .donate-btn:hover {
@@ -150,6 +146,21 @@
       opacity: 0.6;
       cursor: not-allowed;
       transform: none;
+    }
+
+    .wallet-info {
+      margin-top: 10px;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+    }
+
+    .wallet-info.connected {
+      background: #d4edda;
+      color: #155724;
     }
 
     .message {
@@ -222,9 +233,14 @@
       <button type="submit" id="submitBtn">Start Monitoring</button>
     </form>
 
-    <button class="donate-btn" id="donateBtn">
-      ❤️ Support Notifaya - Donate 1 STX
-    </button>
+    <div class="donate-section">
+      <button class="donate-btn" id="donateBtn">
+        ❤️ Support Notifaya - Donate 1 STX
+      </button>
+      <div id="walletInfo" class="wallet-info">
+        Click to connect wallet and donate
+      </div>
+    </div>
 
     <div id="message" class="message"></div>
   </div>
@@ -234,102 +250,164 @@
     const messageDiv = document.getElementById('message');
     const submitBtn = document.getElementById('submitBtn');
     const donateBtn = document.getElementById('donateBtn');
+    const walletInfo = document.getElementById('walletInfo');
 
     // Configuration
     const DONATION_CONTRACT_ADDRESS = 'ST267C6MQJHPR7297033Z8VSKTJM7M62V3784NDT5';
-    const DONATION_CONTRACT_NAME = 'NotifayaDonation';
+    const DONATION_CONTRACT_NAME = 'donation';
 
-    // Wait for Stacks Connect to load
-    function waitForStacksConnect() {
-      return new Promise((resolve) => {
-        if (window.stacksConnectReady && window.stacksRequest) {
-          resolve();
-        } else {
-          const interval = setInterval(() => {
-            if (window.stacksConnectReady && window.stacksRequest) {
-              clearInterval(interval);
-              resolve();
-            }
-          }, 100);
-        }
-      });
+    let connectedAddress = null;
+
+    // Check if wallet is available
+    function getWallet() {
+      if (window.StacksProvider) return window.StacksProvider;
+      if (window.btc) return window.btc;
+      return null;
     }
 
-    // Donation function using official @stacks/connect API
+    // Connect wallet and get address
+    async function connectWallet() {
+      const wallet = getWallet();
+      
+      if (!wallet) {
+        throw new Error('No wallet installed');
+      }
+
+      try {
+        // For Hiro Wallet
+        if (window.StacksProvider) {
+          const result = await window.StacksProvider.request('stx_getAddresses');
+          if (result && result.addresses && result.addresses.length > 0) {
+            return result.addresses[0].address;
+          }
+        }
+        
+        // For Xverse
+        if (window.btc) {
+          const result = await window.btc.request('getAddresses', {});
+          if (result && result.addresses && result.addresses.length > 0) {
+            return result.addresses.find(a => a.type === 'stacks')?.address;
+          }
+        }
+        
+        throw new Error('Could not get address');
+      } catch (error) {
+        throw new Error('User rejected connection');
+      }
+    }
+
+    // Send STX transaction
+    async function sendDonation() {
+      const wallet = getWallet();
+      
+      if (!wallet) {
+        throw new Error('No wallet installed');
+      }
+
+      try {
+        // For Hiro Wallet
+        if (window.StacksProvider) {
+          const result = await window.StacksProvider.request('stx_callContract', {
+            contract: `${DONATION_CONTRACT_ADDRESS}.${DONATION_CONTRACT_NAME}`,
+            function_name: 'donate',
+            function_args: []
+          });
+          return result;
+        }
+        
+        // For Xverse
+        if (window.btc) {
+          const result = await window.btc.request('stx_callContract', {
+            contract: `${DONATION_CONTRACT_ADDRESS}.${DONATION_CONTRACT_NAME}`,
+            functionName: 'donate',
+            functionArgs: []
+          });
+          return result;
+        }
+      } catch (error) {
+        throw error;
+      }
+    }
+
+    // Donation button handler
     async function handleDonation() {
-      console.log('=== Donation Started ===');
+      console.log('Donation button clicked');
+
+      const wallet = getWallet();
       
-      // Wait for library to load
-      await waitForStacksConnect();
-      
-      if (!window.stacksRequest) {
+      if (!wallet) {
         messageDiv.className = 'message error';
-        messageDiv.textContent = 'Wallet connection not ready. Please refresh the page.';
+        messageDiv.textContent = 'Please install Hiro Wallet or Xverse extension first.';
         messageDiv.style.display = 'block';
+        
+        setTimeout(() => {
+          window.open('https://wallet.hiro.so/wallet/install-web', '_blank');
+        }, 2000);
         return;
       }
 
       try {
         donateBtn.disabled = true;
-        donateBtn.textContent = 'Opening wallet...';
+        messageDiv.style.display = 'none';
 
-        console.log('Calling contract:', {
-          contractAddress: DONATION_CONTRACT_ADDRESS,
-          contractName: DONATION_CONTRACT_NAME,
-          functionName: 'donate'
-        });
-
-        // Use official @stacks/connect request API
-        const response = await window.stacksRequest('stx_callContract', {
-          contractAddress: DONATION_CONTRACT_ADDRESS,
-          contractName: DONATION_CONTRACT_NAME,
-          functionName: 'donate',
-          functionArgs: []
-        });
-
-        console.log('Transaction response:', response);
-
-        if (response && response.txId) {
-          messageDiv.className = 'message success';
-          messageDiv.textContent = `Thank you for donating! Tx: ${response.txId.substring(0, 10)}...`;
-          messageDiv.style.display = 'block';
+        // Step 1: Connect wallet if not connected
+        if (!connectedAddress) {
+          donateBtn.textContent = 'Connecting wallet...';
+          walletInfo.textContent = 'Please approve connection in your wallet';
+          
+          connectedAddress = await connectWallet();
+          
+          walletInfo.className = 'wallet-info connected';
+          walletInfo.textContent = `Connected: ${connectedAddress.substring(0, 8)}...`;
+          donateBtn.textContent = 'Send 1 STX Donation';
+          donateBtn.disabled = false;
+          return;
         }
 
-        donateBtn.disabled = false;
+        // Step 2: Send donation
+        donateBtn.textContent = 'Confirm in wallet...';
+        walletInfo.textContent = 'Please confirm the transaction in your wallet';
+        
+        const result = await sendDonation();
+        
+        console.log('Donation result:', result);
+        
+        messageDiv.className = 'message success';
+        messageDiv.textContent = `Thank you for donating! Transaction submitted.`;
+        messageDiv.style.display = 'block';
+        
         donateBtn.textContent = '❤️ Support Notifaya - Donate 1 STX';
+        walletInfo.textContent = `Connected: ${connectedAddress.substring(0, 8)}...`;
+        donateBtn.disabled = false;
 
       } catch (error) {
         console.error('Donation error:', error);
         
         let errorMessage = 'Donation failed. ';
         
-        if (error.message) {
-          if (error.message.includes('User rejected') || error.message.includes('cancel')) {
-            errorMessage = 'Donation cancelled.';
-          } else if (error.message.includes('No wallet')) {
-            errorMessage = 'Please install Hiro Wallet or Xverse extension.';
-          } else {
-            errorMessage += error.message;
-          }
+        if (error.message.includes('No wallet')) {
+          errorMessage = 'Please install Hiro Wallet or Xverse.';
+        } else if (error.message.includes('rejected')) {
+          errorMessage = 'Connection rejected.';
+          connectedAddress = null;
+        } else if (error.message.includes('cancel')) {
+          errorMessage = 'Transaction cancelled.';
         } else {
-          errorMessage += 'Please make sure you have a Stacks wallet installed.';
+          errorMessage += error.message;
         }
         
         messageDiv.className = 'message error';
         messageDiv.textContent = errorMessage;
         messageDiv.style.display = 'block';
+        
+        donateBtn.textContent = connectedAddress ? 'Send 1 STX Donation' : '❤️ Support Notifaya - Donate 1 STX';
+        walletInfo.textContent = connectedAddress ? `Connected: ${connectedAddress.substring(0, 8)}...` : 'Click to connect wallet and donate';
+        walletInfo.className = connectedAddress ? 'wallet-info connected' : 'wallet-info';
         donateBtn.disabled = false;
-        donateBtn.textContent = '❤️ Support Notifaya - Donate 1 STX';
       }
     }
 
     donateBtn.addEventListener('click', handleDonation);
-
-    // Check for wallet on page load
-    window.addEventListener('load', async () => {
-      await waitForStacksConnect();
-      console.log('✓ Stacks Connect ready');
-    });
 
     // Registration form handler
     form.addEventListener('submit', async (e) => {
