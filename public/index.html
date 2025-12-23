@@ -5,7 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Notifaya - STX Payment Notifications</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23667eea;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%23764ba2;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='100' cy='100' r='90' fill='url(%23grad)'/%3E%3Cpath d='M 70 90 Q 70 60 100 60 Q 130 60 130 90 L 130 110 Q 130 120 120 125 L 80 125 Q 70 120 70 110 Z' fill='%23fff'/%3E%3Cpath d='M 90 125 Q 90 135 100 135 Q 110 135 110 125' fill='%23fff'/%3E%3Ccircle cx='100' cy='55' r='5' fill='%23fff'/%3E%3Ctext x='100' y='105' font-size='35' font-weight='bold' text-anchor='middle' fill='%23667eea'%3E$%3C/text%3E%3C/svg%3E">
-  <script src="https://unpkg.com/@stacks/connect@7.7.0/dist/connect.min.js"></script>
+  <script type="module">
+    // Import from CDN
+    import { request } from 'https://esm.sh/@stacks/connect@7.8.2';
+    
+    // Make request available globally
+    window.stacksRequest = request;
+    window.stacksConnectReady = true;
+    console.log('Stacks Connect loaded via CDN');
+  </script>
   <style>
     * {
       margin: 0;
@@ -227,21 +235,36 @@
     const submitBtn = document.getElementById('submitBtn');
     const donateBtn = document.getElementById('donateBtn');
 
-    // Configuration - UPDATE THESE AFTER DEPLOYING CONTRACT
+    // Configuration
     const DONATION_CONTRACT_ADDRESS = 'ST267C6MQJHPR7297033Z8VSKTJM7M62V3784NDT5';
-    const DONATION_CONTRACT_NAME = 'donation';
-    
-    // Check if Stacks Connect loaded
-    console.log('Stacks Connect loaded:', typeof window.StacksConnect !== 'undefined');
+    const DONATION_CONTRACT_NAME = 'NotifayaDonation';
 
-    // Donation function
+    // Wait for Stacks Connect to load
+    function waitForStacksConnect() {
+      return new Promise((resolve) => {
+        if (window.stacksConnectReady && window.stacksRequest) {
+          resolve();
+        } else {
+          const interval = setInterval(() => {
+            if (window.stacksConnectReady && window.stacksRequest) {
+              clearInterval(interval);
+              resolve();
+            }
+          }, 100);
+        }
+      });
+    }
+
+    // Donation function using official @stacks/connect API
     async function handleDonation() {
-      console.log('Donate button clicked');
-
-      // Check if Stacks Connect is available
-      if (typeof window.StacksConnect === 'undefined') {
+      console.log('=== Donation Started ===');
+      
+      // Wait for library to load
+      await waitForStacksConnect();
+      
+      if (!window.stacksRequest) {
         messageDiv.className = 'message error';
-        messageDiv.textContent = 'Stacks Connect library not loaded. Please refresh the page.';
+        messageDiv.textContent = 'Wallet connection not ready. Please refresh the page.';
         messageDiv.style.display = 'block';
         return;
       }
@@ -250,30 +273,50 @@
         donateBtn.disabled = true;
         donateBtn.textContent = 'Opening wallet...';
 
-        await window.StacksConnect.openContractCall({
-          network: 'testnet',
+        console.log('Calling contract:', {
+          contractAddress: DONATION_CONTRACT_ADDRESS,
+          contractName: DONATION_CONTRACT_NAME,
+          functionName: 'donate'
+        });
+
+        // Use official @stacks/connect request API
+        const response = await window.stacksRequest('stx_callContract', {
           contractAddress: DONATION_CONTRACT_ADDRESS,
           contractName: DONATION_CONTRACT_NAME,
           functionName: 'donate',
-          functionArgs: [],
-          onFinish: (data) => {
-            console.log('Transaction ID:', data.txId);
-            messageDiv.className = 'message success';
-            messageDiv.textContent = 'Thank you for your donation! Transaction submitted.';
-            messageDiv.style.display = 'block';
-            donateBtn.disabled = false;
-            donateBtn.textContent = '❤️ Support Notifaya - Donate 1 STX';
-          },
-          onCancel: () => {
-            console.log('Donation cancelled');
-            donateBtn.disabled = false;
-            donateBtn.textContent = '❤️ Support Notifaya - Donate 1 STX';
-          }
+          functionArgs: []
         });
+
+        console.log('Transaction response:', response);
+
+        if (response && response.txId) {
+          messageDiv.className = 'message success';
+          messageDiv.textContent = `Thank you for donating! Tx: ${response.txId.substring(0, 10)}...`;
+          messageDiv.style.display = 'block';
+        }
+
+        donateBtn.disabled = false;
+        donateBtn.textContent = '❤️ Support Notifaya - Donate 1 STX';
+
       } catch (error) {
         console.error('Donation error:', error);
+        
+        let errorMessage = 'Donation failed. ';
+        
+        if (error.message) {
+          if (error.message.includes('User rejected') || error.message.includes('cancel')) {
+            errorMessage = 'Donation cancelled.';
+          } else if (error.message.includes('No wallet')) {
+            errorMessage = 'Please install Hiro Wallet or Xverse extension.';
+          } else {
+            errorMessage += error.message;
+          }
+        } else {
+          errorMessage += 'Please make sure you have a Stacks wallet installed.';
+        }
+        
         messageDiv.className = 'message error';
-        messageDiv.textContent = 'Donation failed. Error: ' + error.message;
+        messageDiv.textContent = errorMessage;
         messageDiv.style.display = 'block';
         donateBtn.disabled = false;
         donateBtn.textContent = '❤️ Support Notifaya - Donate 1 STX';
@@ -281,6 +324,12 @@
     }
 
     donateBtn.addEventListener('click', handleDonation);
+
+    // Check for wallet on page load
+    window.addEventListener('load', async () => {
+      await waitForStacksConnect();
+      console.log('✓ Stacks Connect ready');
+    });
 
     // Registration form handler
     form.addEventListener('submit', async (e) => {
