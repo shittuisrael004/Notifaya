@@ -236,62 +236,79 @@
   </div>
 
   <script type="module">
-    import { openContractCall } from 'https://esm.sh/@stacks/connect@7.8.2';
-    
+    import { connect, request, disconnect } from '@stacks/connect';
+    import { Pc, Cl } from '@stacks/transactions';
+
     const messageDiv = document.getElementById('message');
     const donateBtn = document.getElementById('donateBtn');
+    const walletNote = document.querySelector('.wallet-note');
 
-    // Configuration
+    // STRICTLY KEPT CONFIGURATION
     const DONATION_CONTRACT_ADDRESS = 'ST267C6MQJHPR7297033Z8VSKTJM7M62V3784NDT5';
     const DONATION_CONTRACT_NAME = 'donation';
 
-    // Donation handler
+    let userAddress = null;
+
+    function updateWalletUI(stxAddress) {
+      if (stxAddress) {
+        userAddress = stxAddress;
+        donateBtn.textContent = '❤️ Support Notifaya - Donate 1 STX';
+        walletNote.textContent = `Connected: ${stxAddress.substring(0, 6)}...${stxAddress.substring(stxAddress.length - 4)}`;
+      } else {
+        userAddress = null;
+        donateBtn.textContent = '🔗 Connect Wallet to Donate';
+        walletNote.textContent = 'Click to connect wallet';
+      }
+    }
+
     window.handleDonation = async function() {
-      console.log('Donation started');
+      messageDiv.style.display = 'none';
       
       try {
-        donateBtn.disabled = true;
-        donateBtn.textContent = 'Opening wallet...';
-        messageDiv.style.display = 'none';
+        // 1. Connection Step
+        if (!userAddress) {
+          donateBtn.textContent = 'Connecting...';
+          const response = await connect();
+          const stxAddr = response.addresses.find(a => a.symbol === 'STX' || a.address.startsWith('S'));
+          if (stxAddr) updateWalletUI(stxAddr.address);
+          return;
+        }
 
-        await openContractCall({
-          network: 'testnet',
-          contractAddress: DONATION_CONTRACT_ADDRESS,
-          contractName: DONATION_CONTRACT_NAME,
+        // 2. Donation Step with Post-Conditions
+        donateBtn.disabled = true;
+        donateBtn.textContent = 'Awaiting Approval...';
+
+        // Define Post-Condition: User will send EXACTLY 1 STX (1,000,000 microSTX)
+        // This protects the user from contract bugs or malicious logic
+        const donationAmount = 1000000; // 1 STX in microSTX
+        const postCondition = Pc.principal(userAddress).willSendEq(donationAmount).stx();
+
+        const result = await request('stx_callContract', {
+          contract: `${DONATION_CONTRACT_ADDRESS}.${DONATION_CONTRACT_NAME}`,
           functionName: 'donate',
-          functionArgs: [],
-          appDetails: {
-            name: 'Notifaya',
-            icon: window.location.origin + '/favicon.ico'
-          },
-          onFinish: (data) => {
-            console.log('Transaction:', data.txId);
-            messageDiv.className = 'message success';
-            messageDiv.textContent = `Thank you for donating! Tx: ${data.txId.substring(0, 10)}...`;
-            messageDiv.style.display = 'block';
-            donateBtn.disabled = false;
-            donateBtn.textContent = '❤️ Support Notifaya - Donate 1 STX';
-          },
-          onCancel: () => {
-            console.log('Cancelled');
-            messageDiv.className = 'message error';
-            messageDiv.textContent = 'Donation cancelled.';
-            messageDiv.style.display = 'block';
-            donateBtn.disabled = false;
-            donateBtn.textContent = '❤️ Support Notifaya - Donate 1 STX';
-          }
+          functionArgs: [], 
+          network: 'testnet',
+          postConditions: [postCondition],
+          postConditionMode: 'deny', // 'deny' is safer; it fails if any other STX movement is attempted
         });
+
+        messageDiv.className = 'message success';
+        messageDiv.textContent = `Thank you! Transaction sent. ID: ${result.txid.substring(0, 15)}...`;
+        messageDiv.style.display = 'block';
+
       } catch (error) {
         console.error('Error:', error);
         messageDiv.className = 'message error';
-        messageDiv.textContent = 'Please install a Stacks wallet (Hiro, Xverse, or Leather).';
+        messageDiv.textContent = 'Action failed: ' + (error.message || 'Check your wallet.');
         messageDiv.style.display = 'block';
+      } finally {
         donateBtn.disabled = false;
-        donateBtn.textContent = '❤️ Support Notifaya - Donate 1 STX';
+        if (userAddress) donateBtn.textContent = '❤️ Support Notifaya - Donate 1 STX';
       }
     };
 
     donateBtn.addEventListener('click', window.handleDonation);
+    updateWalletUI(null);
   </script>
 
   <script>
